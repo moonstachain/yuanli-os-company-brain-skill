@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local runs
+/tmp/
+*.log
+*.bak
+*.bak-*
+
+# Personal — never commit user-specific paths or wiki dumps
+my-brain.md
+my-vault/
+.brain-surface-cache/
