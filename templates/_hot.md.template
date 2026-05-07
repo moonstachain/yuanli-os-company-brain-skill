@@ -1,0 +1,63 @@
+---
+title: Hot Cache · This Week's Hot Zone
+type: hot-cache
+description: AI's pre-compiled activity cache. Refreshed daily by cron. ~500 words.
+updated: YYYY-MM-DD HH:MM
+window_days: 14
+origin: refresh_hot_static.py (no LLM)
+---
+
+# Hot Cache · This Week's Hot Zone
+
+> **AI contract**: Read this + `_ai-entry.md` before any answer. ~1500 words combined locate ~90% of answers. Unless these two pages explicitly point elsewhere, **don't scan the full vault**.
+
+_Last refresh: <auto-filled by refresh_hot_static.py>_
+
+---
+
+## Recent decisions (last 60 days)
+
+- (auto-filled by refresh_hot_static.py from `wiki/decisions/`)
+
+---
+
+## Recently updated concepts (mtime ≤ 14 days · top 10)
+
+- (auto-filled from `wiki/concepts/` by mtime + size)
+
+---
+
+## Recent high-density sources (mtime ≤ 7 days · top 5)
+
+- (auto-filled from `wiki/sources/` by mtime + size, threshold 2KB)
+
+---
+
+## Recent audits (last 30 days)
+
+- (auto-filled from `wiki/operations/audits/`)
+
+---
+
+## Upcoming review / commitment (from _calendar.md)
+
+- (auto-filled from `wiki/operations/audits/_calendar.md`, T-7 to T+30 window)
+
+---
+
+## System stats
+
+- concepts/: 0 pages
+- syntheses/: 0 pages
+- decisions/: 0 pages
+- sources/transcripts/: 0 pages
+
+---
+
+> **Usage hint**: If the answer isn't in this hot cache, your next move is **ask the user**, not "scan all of `concepts/`". Question: "I didn't find it — should I scan the full vault?"
+
+---
+
+## Activity log
+
+- YYYY-MM-DD HH:MM — refreshed by `refresh_hot_static.py` (static, no LLM)

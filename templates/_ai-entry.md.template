@@ -1,0 +1,67 @@
+---
+title: AI Entry · Compression Layer
+type: ai-entry
+description: AI's first read when entering this wiki. Compresses N concepts + M sources into ~800 words so AI doesn't scan the full vault.
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+total_concepts: 0
+total_sources: 0
+origin: agent-compiled
+borrowed-from: hirosichen/obsidian-ai-knowledge-base + Karpathy LLM Wiki pattern
+---
+
+# AI Entry · Compression Layer
+
+> **AI contract**: Your first action when entering this wiki MUST be reading this file + `_hot.md`.
+> Don't scan `concepts/`, `sources/`, or `_index.md` (full). Read these two ~1500-word files first, then choose ≤5 specific pages to deep-read.
+
+---
+
+## Domain Routing (top MOCs)
+
+| Domain | MOC page | Concept count | When to enter |
+|---|---|---|---|
+| Domain A | [[moc-domain-a]] | ~XX | High-level routing for theme A |
+| Domain B | [[moc-domain-b]] | ~XX | ... |
+| Domain C | [[moc-domain-c]] | ~XX | ... |
+
+---
+
+## Governance / Contract Pages (most-referenced)
+
+- [[constitution]] — meta rules
+- [[collaboration-charter]] — who-does-what
+- [[routing-policy]] — skill routing order
+- [[memory-layer-contract]] — symbol vs vector vs active
+- (add more as needed)
+
+---
+
+## Workflow Shortcuts
+
+- Writing → start with [[moc-content]] + invoke `<your-surface-skill>`
+- Decision → query `decisions/` last 30 days
+- Research → [[moc-research]] + invoke `<your-research-skill>`
+- (add more as needed)
+
+---
+
+## Hard Constraints
+
+- ❌ Do NOT modify `sources/` / `artifacts/` / `insights/` (Layer 1 read-only)
+- ❌ Do NOT create new MOC pages without lint approval
+- ❌ Always query `_index.md` for existing concept page before creating new
+- ❌ Do NOT write drafts outside `_factory/`
+
+---
+
+## Stats
+
+- Total concepts: 0
+- Total sources: 0
+- Total domains: N
+- Last metabolism run: see `_log.md`
+
+---
+
+> **One-liner**: Read `_hot.md` for this week's hot zone → pick 1 MOC → choose ≤5 concept pages → then act.
