@@ -2,6 +2,8 @@
 
 > Build a Sentra-style "Company Brain" on top of any Obsidian-class wiki + Claude Code skills.
 
+[中文版 →](README.zh-CN.md)
+
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange.svg)]()
 [![v0.2](https://img.shields.io/badge/version-v0.2-blue.svg)]()
