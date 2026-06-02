@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Desensitization whitelist template for a PRIVATE Obsidian-vault → GitHub mirror.
+# Pair with scripts/wiki_git_mirror_sync.sh. Copy into your vault root as `.gitignore`.
+#
+# Philosophy: even a PRIVATE mirror should never carry secrets or volatile junk.
+# A private repo can later be made public, shared, or forked — so treat the
+# desensitization layer as load-bearing, not optional.
+#
+# Two models:
+#   (A) BLOCKLIST (default below) — mirror everything except secrets / junk /
+#       a named sensitive sub-tree. Right for a private full-vault backup.
+#   (B) STRICT WHITELIST — ignore everything, then un-ignore only allowed paths.
+#       Switch to this if the repo is or may become PUBLIC. (commented at bottom)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Secrets / credentials (hard block) ──────────────────────────────────────
+*.env
+.env.*
+*.key
+*.pem
+*credentials*.json
+*-secret*.json
+secrets/
+cookies.json
+*.cookies
+cookies/
+*token*.json
+.weread_env
+
+# ── macOS / editor junk ─────────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# ── Volatile logs / scheduler output (else every run dirties the diff) ──────
+*.log
+*.log.*
+
+# ── Obsidian per-user state (keep shared config, drop drifting state) ───────
+.obsidian/plugins/
+.obsidian/cache/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/workspaces.json
+.obsidian/app.json
+.obsidian/graph.json
+
+# ── Python / build junk ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── Named sensitive sub-tree (CUSTOMIZE) ────────────────────────────────────
+# Exclude any vault sub-tree that must never leave the machine — e.g. a pack of
+# client PII / financial data. Use a single-line dir exclude (zero glob misses)
+# and back it with a pre-push assertion (LEAK_GUARD) that aborts if anything
+# under it ever gets tracked. See references/wiki-github-mirror-sync.md.
+# _packs/
+# clients/
+
+# ── (B) STRICT WHITELIST MODE — uncomment to allow-list instead of block-list ─
+# *
+# !*/
+# !concepts/**
+# !syntheses/**
+# !decisions/**
+# !*.md
+# !.gitignore

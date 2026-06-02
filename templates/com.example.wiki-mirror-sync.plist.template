@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd template for scripts/wiki_git_mirror_sync.sh (macOS).
+  Replace ALL <…> placeholders, then install:
+
+    cp this file → ~/Library/LaunchAgents/com.<you>.wiki-mirror-sync.plist
+    launchctl load ~/Library/LaunchAgents/com.<you>.wiki-mirror-sync.plist
+    launchctl list | grep wiki-mirror     # confirm registered
+
+  Notes:
+   - RunAtLoad is false on purpose: do the FIRST sync by hand so a large initial
+     commit happens under your eye, not unattended.
+   - Offset the Minute fields so this never collides with your other cron jobs.
+   - On Linux, port this to a systemd timer or a crontab line instead.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.&lt;you&gt;.wiki-mirror-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>&lt;ABS_PATH_TO&gt;/wiki_git_mirror_sync.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/&lt;you&gt;</string>
+        <key>WIKI_DIR</key>
+        <string>&lt;ABS_PATH_TO_VAULT&gt;</string>
+        <key>REPO_SLUG</key>
+        <string>&lt;owner/name&gt;</string>
+        <key>LEAK_GUARD</key>
+        <string>&lt;ABS_PATH_TO_VAULT&gt;/scripts/assert-no-leak.sh</string>
+    </dict>
+
+    <!-- Twice daily, offset minutes to avoid colliding with other jobs -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>23</integer></dict>
+        <dict><key>Hour</key><integer>23</integer><key>Minute</key><integer>41</integer></dict>
+    </array>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>&lt;ABS_PATH_TO_VAULT&gt;/_log-git-mirror.launchd.out</string>
+    <key>StandardErrorPath</key>
+    <string>&lt;ABS_PATH_TO_VAULT&gt;/_log-git-mirror.launchd.err</string>
+</dict>
+</plist>

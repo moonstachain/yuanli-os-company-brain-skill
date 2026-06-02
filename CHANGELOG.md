@@ -6,6 +6,40 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · [SemVer](htt
 
 ---
 
+## [v0.3.0] — 2026-06-02
+
+### Added · private GitHub mirror sync (the backup organ)
+
+Answers the recurring question "does this skill auto-sync my Obsidian vault to
+GitHub?" — previously *no*. Now there's an explicit, scoped backup capability,
+kept carefully distinct from cross-circle promotion.
+
+#### `scripts/wiki_git_mirror_sync.sh`
+Scheduled, desensitized, whole-vault backup to a **private** GitHub mirror. Env-driven
+(`WIKI_DIR / REPO_SLUG / EXPECTED_REMOTE_RE / PUSH_URL / BRANCH / LEAK_GUARD`).
+Four safety gates enforced before every push:
+- **Private-only** — `gh isPrivate` assertion + `origin` URL allowlist; aborts if the repo is/goes public
+- **Leak guard** — runs an optional pre-push assertion (`LEAK_GUARD`); non-zero exit aborts
+- **Never force** — `fetch` + `rebase` before push; history stays monotonic; rebase conflict ⇒ abort, ask a human
+- **Single lock** — `mkdir` lock prevents overlapping scheduler runs
+Headless-safe gh-credentialed https push (sidesteps the launchd-has-no-ssh-agent failure).
+
+#### `references/wiki-github-mirror-sync.md`
+The methodology: the **mirror ≠ promotion** boundary (backup is flat & whole-vault;
+promotion stays human-gated per three-circles-protocol), the automation-rot 3-axis
+model (cadence / transparency / recovery), the four gates, and launchd-vs-Actions
+host choice (the writer is the laptop ⇒ launchd).
+
+#### `templates/wiki-mirror.gitignore` + `templates/com.example.wiki-mirror-sync.plist.template`
+Desensitization whitelist (blocklist default + strict-whitelist mode for public repos)
+and a launchd timer template (2×/day, offset minutes, `RunAtLoad` off so the first big
+commit happens under human eye).
+
+### Fixed
+- SKILL.md frontmatter `version` was stale at `v0.1` while CHANGELOG was at v0.2.0 — now aligned to v0.3.0.
+
+---
+
 ## [v0.2.0] — 2026-05-08
 
 ### Added · 4 new patterns from real production borrow audit

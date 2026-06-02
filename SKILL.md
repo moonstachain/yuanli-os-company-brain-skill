@@ -2,7 +2,7 @@
 name: yuanli-os-company-brain
 description: Build a personal/team "Company Brain" on top of any Obsidian-class wiki + Claude Code skills. Distilled from the Yuanli-OS Company Brain v0.1 (Sentra × Yuanli-OS alignment). Use this skill when you want to (1) turn 1000+ scattered notes/transcripts/decisions into a queryable context graph, (2) get right-time memory surface before drafting articles/proposals/meetings, (3) extract commitments / disagreements / counterfactuals / decision rationale from any meeting transcript with anti-hallucination grep gate, (4) score the maturity of your own knowledge system on the dual-axis (scaffold + usage) rubric.
 maturity: experimental
-version: v0.1
+version: v0.3.0
 license: MIT
 sources:
   - "Sentra Company Brain Part 1 / Part 2 by Ashwin Gopinath"
@@ -68,13 +68,14 @@ The promotion gate is **decided by the producer**, not pushed by management — 
 | 4 · Role lens | Filter same content for self / student / partner / agent roles | `--role` flag in `brain_surface.py` |
 | 5 · Typed edges + Metacognition | Derive `commits-to / owns / blocks / derives-from / supersedes / supports` edges + freshness/orphan/stale signals | `scripts/relationship_graph.py` + `scripts/metacognition_signals.py` + `scripts/wiki_lint_l10.py` |
 
-### 5 references (the methodology)
+### 6 references (the methodology)
 
 - [`references/sentra-three-layers.md`](references/sentra-three-layers.md) — 3 layers + 4 elements + key oppositions
 - [`references/three-circles-protocol.md`](references/three-circles-protocol.md) — explicit `circle:` field + path-rule inference + promotion gate
 - [`references/typed-relationships-schema.md`](references/typed-relationships-schema.md) — 6 relation types + validation rules + adoption protocol + G2 closure threshold
 - [`references/dual-axis-rubric.md`](references/dual-axis-rubric.md) — **scaffold maturity (60-pt) + usage maturity (10-pt)** evaluation, the methodology that catches optimistic self-reports
 - [`references/24h-rescore-protocol.md`](references/24h-rescore-protocol.md) — any "I'm done" claim must be re-scored within 24h with hard evidence
+- [`references/wiki-github-mirror-sync.md`](references/wiki-github-mirror-sync.md) — **automated private GitHub mirror** of the vault: 4 safety gates (private-only / desensitization / leak-guard / never-force) + launchd vs Actions + the mirror≠promotion boundary
 
 ### 5 scripts (the runtime · pure Python stdlib, no deps)
 
@@ -86,11 +87,17 @@ All scripts accept `--wiki-root <path>` so they work on any Obsidian vault.
 - `scripts/metacognition_signals.py` — 5 signals: stale / orphan / freshness (v0.1 minimum); conflict / weak-evidence pending v0.2
 - `scripts/extract_decision.py` — transcript → 4-tuple `.draft.md` scaffolding (LLM-driven; this script is the orchestrator template)
 
-### 3 templates
+### 1 operations script (bash · the backup organ)
+
+- `scripts/wiki_git_mirror_sync.sh` — scheduled, desensitized backup of the whole vault to a **private** GitHub mirror. Env-driven (`WIKI_DIR / REPO_SLUG / LEAK_GUARD / BRANCH`), enforces 4 safety gates (private-only assertion, leak guard, fetch+rebase never-force, single lock), headless-safe gh-credentialed https push. This is *backup*, not cross-circle promotion — see [`references/wiki-github-mirror-sync.md`](references/wiki-github-mirror-sync.md).
+
+### 5 templates
 
 - `templates/decision-page.md` — 4-tuple format with mandatory `source_quote` + `confidence(high/medium/low)` per item
 - `templates/circle-frontmatter.md` — `circle: individual | shared | institutional | raw | tooling | unknown`
 - `templates/relationship-frontmatter.md` — minimal `relationships:` YAML block
+- `templates/wiki-mirror.gitignore` — desensitization whitelist for the private mirror (blocklist default + strict-whitelist mode)
+- `templates/com.example.wiki-mirror-sync.plist.template` — launchd timer for the mirror sync (2×/day, offset minutes, RunAtLoad off)
 
 ### Sample run (examples/)
 
