@@ -68,7 +68,7 @@ The promotion gate is **decided by the producer**, not pushed by management — 
 | 4 · Role lens | Filter same content for self / student / partner / agent roles | `--role` flag in `brain_surface.py` |
 | 5 · Typed edges + Metacognition | Derive `commits-to / owns / blocks / derives-from / supersedes / supports` edges + freshness/orphan/stale signals | `scripts/relationship_graph.py` + `scripts/metacognition_signals.py` + `scripts/wiki_lint_l10.py` |
 
-### 6 references (the methodology)
+### References (the methodology)
 
 - [`references/sentra-three-layers.md`](references/sentra-three-layers.md) — 3 layers + 4 elements + key oppositions
 - [`references/three-circles-protocol.md`](references/three-circles-protocol.md) — explicit `circle:` field + path-rule inference + promotion gate
@@ -76,6 +76,7 @@ The promotion gate is **decided by the producer**, not pushed by management — 
 - [`references/dual-axis-rubric.md`](references/dual-axis-rubric.md) — **scaffold maturity (60-pt) + usage maturity (10-pt)** evaluation, the methodology that catches optimistic self-reports
 - [`references/24h-rescore-protocol.md`](references/24h-rescore-protocol.md) — any "I'm done" claim must be re-scored within 24h with hard evidence
 - [`references/wiki-github-mirror-sync.md`](references/wiki-github-mirror-sync.md) — **automated private GitHub mirror** of the vault: 4 safety gates (private-only / desensitization / leak-guard / never-force) + launchd vs Actions + the mirror≠promotion boundary
+- [`references/multiplatform-projection-protocol.md`](references/multiplatform-projection-protocol.md) — **SSOT + one-way projection** across 6+ platforms (local vault / private git / RAG notebook / mobile notes / collab tables / global wiki): role-per-platform card, scenario routing, 3 sync iron rules, field-tested pitfalls, N+1 checklist
 
 ### 5 scripts (the runtime · pure Python stdlib, no deps)
 
