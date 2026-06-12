@@ -2,7 +2,7 @@
 name: yuanli-os-company-brain
 description: Build a personal/team "Company Brain" on top of any Obsidian-class wiki + Claude Code skills. Distilled from the Yuanli-OS Company Brain v0.1 (Sentra × Yuanli-OS alignment). Use this skill when you want to (1) turn 1000+ scattered notes/transcripts/decisions into a queryable context graph, (2) get right-time memory surface before drafting articles/proposals/meetings, (3) extract commitments / disagreements / counterfactuals / decision rationale from any meeting transcript with anti-hallucination grep gate, (4) score the maturity of your own knowledge system on the dual-axis (scaffold + usage) rubric.
 maturity: experimental
-version: v0.3.0
+version: v0.4.0
 license: MIT
 sources:
   - "Sentra Company Brain Part 1 / Part 2 by Ashwin Gopinath"
@@ -14,7 +14,7 @@ related-skills:
   - "skill-router / os-yuanli (governance gates)"
 ---
 
-# Yuanli-OS Company Brain · v0.1
+# Yuanli-OS Company Brain · v0.4
 
 > **One-line positioning**: A skill that turns "data-rich but memory-poor" wikis into a Sentra-style company brain — explicit three-circle boundaries, typed relationships, right-time surface, role lens, metacognition signals.
 
@@ -27,6 +27,8 @@ Trigger this skill when **at least one** of these is true:
 3. You just had a meeting and want the transcript → 4-tuple (commitments / disagreements / counterfactuals / decision_rationale) extracted with **every quote grep-verified**.
 4. You want to score the **maturity** of your own knowledge system honestly — not the "how full does it look" maturity, but the "is it actually being used" maturity.
 5. You want a **24-hour re-score discipline** to catch your own optimistic post-build estimates.
+6. Your knowledge has outgrown one tool and you need a **tiered spine** — what stays in the local index vault, what goes to a big-capacity RAG notebook, what flows through a realtime hot-content service.
+7. You want to **share a slice** of the vault with teammates — tag-scoped, leak-guarded, read-only GitHub mirror they can just `git pull`.
 
 Skip this skill if:
 
@@ -75,10 +77,15 @@ The promotion gate is **decided by the producer**, not pushed by management — 
 - [`references/typed-relationships-schema.md`](references/typed-relationships-schema.md) — 6 relation types + validation rules + adoption protocol + G2 closure threshold
 - [`references/dual-axis-rubric.md`](references/dual-axis-rubric.md) — **scaffold maturity (60-pt) + usage maturity (10-pt)** evaluation, the methodology that catches optimistic self-reports
 - [`references/24h-rescore-protocol.md`](references/24h-rescore-protocol.md) — any "I'm done" claim must be re-scored within 24h with hard evidence
-- [`references/wiki-github-mirror-sync.md`](references/wiki-github-mirror-sync.md) — **automated private GitHub mirror** of the vault: 4 safety gates (private-only / desensitization / leak-guard / never-force) + launchd vs Actions + the mirror≠promotion boundary
+- [`references/wiki-github-mirror-sync.md`](references/wiki-github-mirror-sync.md) — **automated private GitHub mirror** of the vault: 4 safety gates (private-only / desensitization / leak-guard / never-force) + launchd vs Actions + the mirror≠promotion boundary + the **GitHub-connector bridge** that lets sandboxed web Claude read the synced vault
 - [`references/multiplatform-projection-protocol.md`](references/multiplatform-projection-protocol.md) — **SSOT + one-way projection** across 6+ platforms (local vault / private git / RAG notebook / mobile notes / collab tables / global wiki): role-per-platform card, scenario routing, 3 sync iron rules, field-tested pitfalls, N+1 checklist
+- [`references/tiered-knowledge-spine.md`](references/tiered-knowledge-spine.md) — **3-tier content routing** (index spine / capacity depth / hot pulse): the 4-axis routing rubric (size / shelf-life / modality / recall frequency), material-format priority (md > office docs > audio > video), cost discipline, and why merging the tiers into one platform is the anti-pattern. Orthogonal to the projection protocol: projection distributes *the same* content, the spine homes *different kinds* of content
+- [`references/team-share-slice.md`](references/team-share-slice.md) — **the distribution organ** (vs the mirror's backup organ): tag-scoped white-list selection → content-signature leak-guard (any hit aborts) → read-only private GitHub slice repo → invite collaborators by GitHub id → scheduled one-way re-export. Runtime: `scripts/share_slice_export.py`
+- [`references/5-layer-architecture.md`](references/5-layer-architecture.md) — hosting-aware locality-first model: L0 Intake → L1 Memory → L2 Promotion → L3 Recall → L4 Action, with cross-layer seams and a hosting decision matrix
+- [`references/karpathy-llm-wiki-pattern.md`](references/karpathy-llm-wiki-pattern.md) — `_ai-entry.md` + `_hot.md` AI entry compression (~20-30× token reduction on 1000-page wikis)
+- [`references/borrow-rubric-3-tier.md`](references/borrow-rubric-3-tier.md) — doc-level / executable-level / verified-level independent scoring that catches documentation theater
 
-### 5 scripts (the runtime · pure Python stdlib, no deps)
+### 7 scripts (the runtime · pure Python stdlib, no deps)
 
 All scripts accept `--wiki-root <path>` so they work on any Obsidian vault.
 
@@ -87,6 +94,8 @@ All scripts accept `--wiki-root <path>` so they work on any Obsidian vault.
 - `scripts/wiki_lint_l10.py` — `relationships:` schema validator (E1-E6 hard errors + W1-W5 warnings)
 - `scripts/metacognition_signals.py` — 5 signals: stale / orphan / freshness (v0.1 minimum); conflict / weak-evidence pending v0.2
 - `scripts/extract_decision.py` — transcript → 4-tuple `.draft.md` scaffolding (LLM-driven; this script is the orchestrator template)
+- `scripts/share_slice_export.py` — tag-scoped, leak-guarded export of a vault slice to a read-only mirror dir (dry-run by default; the distribution organ's ①-③, see `references/team-share-slice.md`)
+- `scripts/intake_getnote.py` — hot-layer (PULSE) intake stub renderer: agent-side semantic recall results (JSON) → `sources/` markdown stubs with `circle: raw` + `truth_source` back-pointer. Carries the **large-integer note_id guardrail** (IDs past 2^53 silently lose precision in float-coercing runtimes — always recall semantically, store ids as strings)
 
 ### 1 operations script (bash · the backup organ)
 
@@ -152,8 +161,9 @@ The author's field-test (2026-05-02) showed:
 
 See `examples/sample-runs/` for actual command outputs.
 
-## Roadmap (v0.2 candidates)
+## Roadmap (v0.5 candidates)
 
+- **Cold-start intake (Phase -1)**: raw dumps (PDF / Word / chat exports) → markdown → two-stage auto-organization (coarse classify-and-tag, then relation derivation). Deliberately deferred from v0.4 — the conversion route exists in field practice but hasn't been distilled to skill quality yet
 - `conflict` signal (two relationships in opposition) and `weak-evidence` signal (relationships with single source) for `metacognition_signals.py`
 - TUI dashboard wrapping the 3 hard-layer scripts
 - `obsidian-cli` adapter so the scripts run inside Obsidian directly

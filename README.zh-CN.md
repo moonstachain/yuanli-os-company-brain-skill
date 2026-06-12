@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange.svg)]()
-[![v0.2](https://img.shields.io/badge/version-v0.2-blue.svg)]()
+[![v0.4](https://img.shields.io/badge/version-v0.4-blue.svg)]()
 
 ## 这是什么
 
@@ -29,7 +29,19 @@
 - **Schema 系统** —— `schema_infer / validate / diff` 三件套工具，借鉴自 basicmachines-co/basic-memory（[脚本](scripts/schema_system.py)）。
 - **静态刷新（Static refresh）** —— 用不调用 LLM 的 `refresh_hot_static.py` 作为热缓存定时任务的默认策略（避免 LLM 自我递归的风险）。
 
-本 skill 构建于 Sentra「公司大脑」心智模型（Ashwin Gopinath，2026-04）× 原力OS 治理内核 × 独立借鉴审计（2026-05-08）之上。
+**v0.3 新增功能（2026-06-02）**：
+
+- **私有 GitHub 镜像备份** —— 定时、脱敏的全库备份，4 重安全门：仅限私有仓 / 泄露守卫 / 永不 force / 单一锁（[详情](references/wiki-github-mirror-sync.md)）。
+- **多平台投影协议** —— 单一真相源 + 单向投影跨 6+ 平台，每平台一张唯一职责卡 + 三条同步铁律（[详情](references/multiplatform-projection-protocol.md)）。
+
+**v0.4 新增功能（2026-06-12）**：
+
+- **分层知识脊柱（Tiered knowledge spine）** —— 三层内容路由（索引层 / 容量层 / 热点层）+ 四轴判据（容量 / 时效 / 模态 / 检索频率）+ 物料适配优先级 + 成本纪律（[详情](references/tiered-knowledge-spine.md)）。
+- **团队共享切片（Team share slice）** —— 「分发器官」（区别于镜像的「备份器官」）：tag 作用域白名单导出 → 内容签名泄露守卫 → 只读私有 GitHub 切片仓，协作者 `git pull` 即拿到更新（[详情](references/team-share-slice.md) · [脚本](scripts/share_slice_export.py)）。
+- **GitHub connector 桥** —— 让运行在沙箱里的 web Claude 通过内置 GitHub connector 读取已同步的知识库（[详情](references/wiki-github-mirror-sync.md)）。
+- **热点层摄取适配器** —— 把语义召回结果落为 `sources/` 下带 `circle: raw` + `truth_source` 回指的 stub，内置大整数 note_id 精度护栏（[脚本](scripts/intake_getnote.py)）。
+
+本 skill 构建于 Sentra「公司大脑」心智模型（Ashwin Gopinath，2026-04）× 原力OS 治理内核 × 独立借鉴审计（2026-05-08）× 一周真实团队实战讨论（2026-06）之上。
 
 ## 5 分钟快速上手
 
@@ -116,8 +128,9 @@ yuanli-os-company-brain-skill/
 
 如果以上任何一条和你的世界观冲突，请 fork 这套方法论自行改造，而不要整套照搬。
 
-## 路线图（v0.2 候选项）
+## 路线图（v0.5 候选项）
 
+- **冷启动摄取层（Phase -1）**：原始材料堆（PDF / Word / 聊天记录导出）→ markdown → 两阶段自动整理 —— v0.4 主动延后；
 - 在 `metacognition_signals.py` 中加入 `conflict（冲突）` 和 `weak-evidence（弱证据）` 信号；
 - 一个把 3 个硬核脚本包起来的 TUI 仪表盘；
 - `obsidian-cli` 适配器（直接在 Obsidian 内运行）；

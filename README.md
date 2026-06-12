@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange.svg)]()
-[![v0.2](https://img.shields.io/badge/version-v0.2-blue.svg)]()
+[![v0.4](https://img.shields.io/badge/version-v0.4-blue.svg)]()
 
 ## What this is
 
@@ -27,7 +27,17 @@ A distilled, opinionated skill that turns "data-rich but memory-poor" personal/t
 - **Schema system** — `schema_infer / validate / diff` three-piece toolkit borrowed from basicmachines-co/basic-memory ([scripts](scripts/schema_system.py))
 - **Static refresh** — no-LLM `refresh_hot_static.py` as default hot-cache cron strategy (avoids LLM recursion risk)
 
-Built on the Sentra "Company Brain" mental model (Ashwin Gopinath, 2026-04) × Yuanli-OS governance kernel × independent borrow audit (2026-05-08).
+**v0.3 additions (2026-06-02)**:
+- **Private GitHub mirror sync** — scheduled, desensitized whole-vault backup with 4 safety gates: private-only / leak-guard / never-force / single-lock ([details](references/wiki-github-mirror-sync.md))
+- **Multiplatform projection protocol** — SSOT + one-way projection across 6+ platforms, role-per-platform card + 3 sync iron rules ([details](references/multiplatform-projection-protocol.md))
+
+**v0.4 additions (2026-06-12)**:
+- **Tiered knowledge spine** — 3-tier content routing (index spine / capacity depth / hot pulse) with a 4-axis rubric (size / shelf-life / modality / recall frequency), material-format priority and cost discipline ([details](references/tiered-knowledge-spine.md))
+- **Team share slice** — the *distribution* organ (vs the mirror's *backup* organ): tag-scoped white-list export → content-signature leak-guard → read-only private GitHub slice teammates just `git pull` ([details](references/team-share-slice.md) · [script](scripts/share_slice_export.py))
+- **GitHub-connector bridge** — let sandboxed web Claude read the synced vault through the built-in GitHub connector ([details](references/wiki-github-mirror-sync.md))
+- **Hot-layer intake adapter** — semantic-recall results → `sources/` stubs with `circle: raw` + `truth_source` back-pointer, including the large-integer note-id precision guardrail ([script](scripts/intake_getnote.py))
+
+Built on the Sentra "Company Brain" mental model (Ashwin Gopinath, 2026-04) × Yuanli-OS governance kernel × independent borrow audit (2026-05-08) × a week of real team field discussions (2026-06).
 
 ## 5-minute quickstart
 
@@ -113,8 +123,9 @@ This is **opinionated software**. It embodies specific choices:
 
 If any of these clash with your worldview, fork the methodology and adapt rather than adopting wholesale.
 
-## Roadmap (v0.2 candidates)
+## Roadmap (v0.5 candidates)
 
+- **Cold-start intake (Phase -1)**: raw dumps (PDF / Word / chat exports) → markdown → two-stage auto-organization — deliberately deferred from v0.4
 - `conflict` and `weak-evidence` signals in `metacognition_signals.py`
 - TUI dashboard wrapping the 3 hard-layer scripts
 - `obsidian-cli` adapter (run inside Obsidian directly)

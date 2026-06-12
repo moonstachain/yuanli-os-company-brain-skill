@@ -6,6 +6,61 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · [SemVer](htt
 
 ---
 
+## [v0.4.0] — 2026-06-12
+
+Distilled from a week of field discussions (2026-06-02 → 06-11) on running a
+company brain across a real team: where different kinds of content should live,
+how teammates get a slice of it, and how sandboxed Claude reads it.
+
+### Added · tiered knowledge spine (the routing rubric)
+
+#### `references/tiered-knowledge-spine.md`
+3-tier content routing — **index spine** (local vault: concept network + pointers,
+never bulk) / **capacity depth** (RAG notebook: large multimodal topic libraries) /
+**hot pulse** (realtime hot-content capture: link → transcript → semantic recall).
+Includes the 4-axis routing rubric (size / shelf-life / modality / recall frequency,
+size wins conflicts), material-format priority (md > word/pdf/ppt > audio > video),
+cost discipline, and field-tested pitfalls. Orthogonal to
+`multiplatform-projection-protocol` (projection distributes the *same* content;
+the spine homes *different kinds* of content).
+
+### Added · team share slice (the distribution organ)
+
+#### `references/team-share-slice.md` + `scripts/share_slice_export.py`
+Tag-scoped (`share_group:` white-list, producer-decides), leak-guarded
+(content-signature scan, **any hit aborts the whole export**), read-only private
+GitHub slice that collaborators get by GitHub id and keep fresh with `git pull`.
+Explicitly distinct from the v0.3 mirror: mirror = backup organ (whole vault, you
+only); slice = distribution organ (tag scope, teammates). Script is stdlib-only,
+dry-run by default, full-rebuild semantics so untagging a page takes it offline.
+Field-tested guardrails baked in: patterns-not-literals in the guard file,
+absolute paths only, scan scope limited to candidate files.
+
+### Added · GitHub-connector bridge (read path for sandboxed Claude)
+
+New section in `references/wiki-github-mirror-sync.md`: once the vault (mirror or
+slice) is on GitHub, web Claude can read it through the built-in GitHub connector —
+local vault → sync → connectors → authorize → topic-scoped context pull. Honest
+labeling: the oft-quoted "2-3× better drafts" is classroom felt-sense, not a
+benchmark. The bridge is a read path only; circles and leak-guard run before
+anything reaches GitHub.
+
+### Added · hot-layer intake adapter
+
+#### `scripts/intake_getnote.py`
+Renders agent-side semantic-recall results (JSON) into `sources/` stubs with
+`circle: raw` + `truth_source` back-pointer, dry-run by default. Carries the
+**large-integer note_id guardrail**: 19-digit ids passed as numbers get rounded
+past 2^53 in float-coercing runtimes and the platform then reports "note not
+found" — always recall semantically, always store ids as strings. Stubs are
+volatile by contract: distill keepers into the index spine within 24h.
+
+### Fixed
+- Version drift: SKILL.md title said v0.1, README badge v0.2, frontmatter v0.3.0 — all aligned to v0.4.0
+- SKILL.md references list was missing the three v0.2 references (5-layer / Karpathy / borrow-rubric) — restored
+
+---
+
 ## [v0.3.0] — 2026-06-02
 
 ### Added · private GitHub mirror sync (the backup organ)

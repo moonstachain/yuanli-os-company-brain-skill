@@ -117,3 +117,39 @@ should be a `CLEAN` / `Everything up-to-date` no-op — and confirm `gh repo vie
 --json pushedAt` moved. That's the verified-level check from
 [borrow-rubric-3-tier.md](borrow-rubric-3-tier.md): "cron is loaded" ≠ "cron fired
 with real data."
+
+---
+
+## Bridge: letting sandboxed Claude read the vault via GitHub connector
+
+A side benefit of having the vault on GitHub (mirror or [share slice](team-share-slice.md)):
+**web Claude (claude.ai), which runs in a managed sandbox and cannot see your disk,
+can read it through the built-in GitHub connector.** Path:
+
+```
+local vault → mirror/slice sync to GitHub → claude.ai → Settings/customize
+            → Connectors → GitHub → authorize → name a topic in chat
+            → Claude pulls the relevant pages as context
+```
+
+When to use which surface:
+
+| Surface | Strength | Reads your vault via |
+|---|---|---|
+| Claude Code (local) | scripts, lint, grep-verified quotes | filesystem directly |
+| web Claude + GitHub connector | long-form drafting / polishing with your knowledge loaded | the GitHub mirror |
+
+Field observation (teaching sessions, 2026-06): users report noticeably better
+drafts when web Claude has the synced vault connected versus a bare chat —
+anecdotally described as a 2-3× quality jump. **That figure is classroom felt-sense,
+not a measured benchmark**; treat it as "clearly better", nothing more precise.
+
+Boundaries:
+
+- This bridge is a **read path** for an existing mirror — it does not change what
+  may be mirrored. The three-circles rules and the leak-guard run *before* anything
+  reaches GitHub; the connector only ever sees what already passed those gates.
+- Syncing and connector reads both consume tokens/quota. Keep the sync scheduled
+  (not per-edit), and connect the repo only when doing knowledge-heavy work.
+- If collaborators should get this too, point them at a [share slice](team-share-slice.md)
+  repo, not at your backup mirror (the mirror contains your individual circle).
