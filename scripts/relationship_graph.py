@@ -45,10 +45,16 @@ class Edge:
     type: str            # one of VALID_RELATION_TYPES
     target: str          # wikilink-style target
     evidence: list[str] = field(default_factory=list)
-    status: str = "active"
+    status: str = "active"          # active | candidate（高价值边待 human-confirm）
     confidence: str = ""
     note: str = ""
-    source_kind: str = "explicit"  # explicit | derived-from-decision
+    source_kind: str = "explicit"  # explicit | derived-from-decision | osa-card-json
+    trust: str = ""      # claude-auto | claude-unilateral | human-confirmed（两层统一信任尺）
+    cross: str = ""      # decision->concept | decision->source | decision->decision | concept->concept
+
+
+# 高价值边：未经 human-confirm 不计入正式图（CONTRACT §2）
+HIGH_VALUE_TYPES = ("supersedes", "blocks")
 
 
 # ============================================================
@@ -236,6 +242,72 @@ def derive_edges_from_decision(decision_path: Path) -> list[Edge]:
 
 
 # ============================================================
+# OSA 决策卡 JSON → 跨层 typed edges（两层大脑焊接层）
+# ============================================================
+
+
+def _normalize_target(to: str) -> str:
+    """concept-name / card-id 原样；source 路径取 stem。统一成 wikilink。"""
+    t = to.strip()
+    if "/" in t or t.endswith(".md"):
+        t = Path(t).stem
+    return f"[[{t}]]"
+
+
+def parse_osa_card_edges(card_path: Path) -> list[Edge]:
+    """从一张/一批 OSA 卡 JSON 的 edges[] 抽跨层 typed edges。
+
+    接受三种 JSON 形状：单卡(dict) / 批量(顶层 list) / {nodes:[...]}。
+    高价值边(supersedes/blocks)若非 human-confirmed 或带 _flag → status=candidate。
+    """
+    try:
+        data = json.loads(card_path.read_text(encoding="utf-8", errors="replace"))
+    except (json.JSONDecodeError, OSError, ValueError):
+        return []
+
+    if isinstance(data, list):
+        cards = data
+    elif isinstance(data, dict) and isinstance(data.get("nodes"), list):
+        cards = data["nodes"]
+    elif isinstance(data, dict):
+        cards = [data]
+    else:
+        return []
+
+    edges: list[Edge] = []
+    for card in cards:
+        if not isinstance(card, dict):
+            continue
+        cid = card.get("id") or card.get("title") or card_path.stem
+        src_label = f"[[{cid}]]"
+        for e in card.get("edges", []) or []:
+            if not isinstance(e, dict) or not e.get("type") or not e.get("to"):
+                continue
+            etype = str(e.get("type", "")).strip()
+            trust = str(e.get("trust", "")).strip()
+            flagged = bool(e.get("_flag"))
+            ts = e.get("truth_source", [])
+            if not isinstance(ts, list):
+                ts = [str(ts)]
+            status = "active"
+            if flagged or (etype in HIGH_VALUE_TYPES and trust != "human-confirmed"):
+                status = "candidate"
+            edges.append(Edge(
+                source=src_label,
+                type=etype,
+                target=_normalize_target(str(e.get("to", ""))),
+                evidence=ts,
+                status=status,
+                confidence=trust,          # 向后兼容旧字段
+                note=str(e.get("_flag", "") or "")[:120],
+                source_kind="osa-card-json",
+                trust=trust,
+                cross=str(e.get("cross", "")).strip(),
+            ))
+    return edges
+
+
+# ============================================================
 # 扫描入口
 # ============================================================
 
@@ -273,6 +345,19 @@ def scan_derived() -> list[Edge]:
         if path.name.startswith("_") or path.name.endswith(".draft.md"):
             continue
         edges.extend(derive_edges_from_decision(path))
+    return edges
+
+
+def scan_osa_cards(osa_dir: Path | None = None) -> list[Edge]:
+    """扫 OSA 决策卡 JSON 的 edges[]（默认 decisions/osa/，可 --osa-dir 覆盖）"""
+    edges: list[Edge] = []
+    d = osa_dir if osa_dir is not None else (WIKI_ROOT / "decisions" / "osa")
+    if not d.exists():
+        return edges
+    for path in d.rglob("*.json"):
+        if path.name.startswith("_"):
+            continue
+        edges.extend(parse_osa_card_edges(path))
     return edges
 
 
@@ -330,8 +415,11 @@ def render_stats(edges: list[Edge]) -> str:
         nodes.add(e.source)
         nodes.add(e.target)
 
+    candidates = [e for e in edges if e.status == "candidate"]
+    active = len(edges) - len(candidates)
+
     lines = ["# G2 typed edges · 图统计", ""]
-    lines.append(f"- 边数：{len(edges)}")
+    lines.append(f"- 边数：{len(edges)}（active {active} · candidate {len(candidates)}）")
     lines.append(f"- 节点数：{len(nodes)}")
     lines.append("")
     lines.append("## 按类型分布")
@@ -342,6 +430,25 @@ def render_stats(edges: list[Edge]) -> str:
     lines.append("## 按来源分布")
     for k, v in by_kind.items():
         lines.append(f"- {k}: {v}")
+
+    # 跨层边分布（仅 osa-card-json 携带 cross）
+    by_cross: dict[str, int] = {}
+    for e in edges:
+        if e.cross:
+            by_cross[e.cross] = by_cross.get(e.cross, 0) + 1
+    if by_cross:
+        lines.append("")
+        lines.append("## 跨层分布（两层大脑焊接）")
+        for k, v in sorted(by_cross.items()):
+            lines.append(f"- {k}: {v}")
+
+    if candidates:
+        lines.append("")
+        lines.append("## 🔶 candidate 边（高价值边待 human-confirm，未计入正式图）")
+        for e in candidates:
+            note = f" — {e.note}" if e.note else ""
+            lines.append(f"- {e.source} -{e.type}-> {e.target} (trust={e.trust or '?'}){note}")
+
     if invalid:
         lines.append("")
         lines.append("## ⚠️ 无效 relation type")
@@ -367,6 +474,9 @@ def main() -> int:
     p.add_argument("--stats", action="store_true")
     p.add_argument("--out", type=Path)
     p.add_argument("--no-derived", action="store_true", help="explicit only, skip derivation from decisions/")
+    p.add_argument("--no-osa", action="store_true", help="skip OSA decision-card JSON edges")
+    p.add_argument("--osa-dir", type=Path, default=None,
+                   help="OSA 卡 JSON 目录（默认 <wiki>/decisions/osa；可指向 dry-run 目录验证）")
     args = p.parse_args()
 
     global WIKI_ROOT
@@ -382,6 +492,8 @@ def main() -> int:
     edges = scan_explicit()
     if not args.no_derived:
         edges.extend(scan_derived())
+    if not args.no_osa:
+        edges.extend(scan_osa_cards(args.osa_dir))
 
     if args.dot:
         out_text = render_dot(edges)

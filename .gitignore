@@ -27,3 +27,11 @@ Thumbs.db
 my-brain.md
 my-vault/
 .brain-surface-cache/
+
+# One-off local distillation runs (machine-bound, contain client-domain content)
+scripts/gen_5_full_synthesis.py
+scripts/gen_synthesis_outlines.py
+scripts/triage_deep_research.py
+
+# Generated artifacts in the example vault
+examples/wiki/_hot.md

@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the two optional deps (schema_system / semantic path)
+        run: pip install -r requirements.txt
+
+      - name: Compile every script
+        run: python3 -m py_compile scripts/*.py
+
+      - name: Example-vault regression — typed edges
+        run: |
+          out=$(python3 scripts/relationship_graph.py --wiki-root examples/wiki --stats)
+          echo "$out"
+          echo "$out" | grep -q "边数：13" || { echo "::error::edge count drifted from 13"; exit 1; }
+          echo "$out" | grep -q "derived-from-decision: 4" || { echo "::error::derived edges drifted from 4"; exit 1; }
+
+      - name: Example-vault regression — relationships lint
+        run: |
+          out=$(python3 scripts/wiki_lint_l10.py --wiki-root examples/wiki)
+          echo "$out"
+          echo "$out" | grep -q "错误（hard errors）：\*\*0\*\*" || { echo "::error::lint errors appeared"; exit 1; }
+
+      # freshness bins are mtime-dependent (a fresh clone bins differently than a
+      # 42-day-old working tree) — assert exit code + orphan invariant only.
+      - name: Example-vault regression — metacognition signals
+        run: |
+          out=$(python3 scripts/metacognition_signals.py --wiki-root examples/wiki)
+          echo "$out"
+          echo "$out" | grep -q "orphan (2)" || { echo "::error::orphan invariant drifted from 2"; exit 1; }
+
+      - name: Smoke — surface, schema infer, hot refresh, exporters
+        run: |
+          python3 scripts/brain_surface.py --wiki-root examples/wiki --topic "company brain" > /dev/null
+          WIKI_ROOT=examples/wiki python3 scripts/schema_system.py infer concepts/ > /dev/null
+          WIKI_ROOT=examples/wiki python3 scripts/refresh_hot_static.py > /dev/null
+          echo '{"note_id":"123456789","title":"ci-smoke","content":"x"}' \
+            | python3 scripts/intake_getnote.py --wiki-root "$PWD/examples/wiki" > /dev/null

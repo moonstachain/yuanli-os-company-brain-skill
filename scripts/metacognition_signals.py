@@ -184,6 +184,66 @@ def scan_orphan_commitments() -> list[Signal]:
     return out
 
 
+def scan_osa_card_signals(osa_dir: Path | None = None) -> list[Signal]:
+    """读 OSA 决策卡 JSON（两层大脑决策层），产出：
+      - stale：active supersedes 边 → 被取代方标 stale（含跨层 decision->concept/decision）
+      - stale(候选)：candidate supersedes（带 _flag 或非 human-confirmed）→ info 提示待确认
+      - weak-evidence：truth_source 仅 1 条的卡（单点孤证）
+    这是步骤 4 的姊妹接线：让 OSA 卡的取代关系也能触发 stale 信号。
+    """
+    out: list[Signal] = []
+    d = osa_dir if osa_dir is not None else (WIKI_ROOT / "decisions" / "osa")
+    if not d.exists():
+        return out
+    for path in d.rglob("*.json"):
+        if path.name.startswith("_"):
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, OSError, ValueError):
+            continue
+        if isinstance(data, list):
+            cards = data
+        elif isinstance(data, dict) and isinstance(data.get("nodes"), list):
+            cards = data["nodes"]
+        elif isinstance(data, dict):
+            cards = [data]
+        else:
+            continue
+        for card in cards:
+            if not isinstance(card, dict):
+                continue
+            cid = card.get("id") or card.get("title") or path.stem
+            # weak-evidence：单条 truth_source
+            ts = card.get("truth_source", [])
+            if isinstance(ts, list) and len(ts) == 1:
+                out.append(Signal(
+                    kind="weak-evidence", severity="warning", page=cid,
+                    detail=f"OSA 卡仅 1 条 truth_source（单点孤证，建议多源跨会议互证）",
+                    extra={"truth_source_n": 1},
+                ))
+            # supersedes → 取代方 stale
+            for e in card.get("edges", []) or []:
+                if not isinstance(e, dict) or e.get("type") != "supersedes":
+                    continue
+                target = str(e.get("to", "")).strip()
+                trust = str(e.get("trust", "")).strip()
+                flagged = bool(e.get("_flag"))
+                if flagged or trust != "human-confirmed":
+                    out.append(Signal(
+                        kind="stale", severity="info", page=target,
+                        detail=f"候选被取代：OSA 卡 [{cid}] 提议 supersedes（待 human-confirm，未生效）",
+                        extra={"by_card": cid, "status": "candidate"},
+                    ))
+                else:
+                    out.append(Signal(
+                        kind="stale", severity="warning", page=target,
+                        detail=f"已被 OSA 决策卡 [{cid}] supersedes（human-confirmed）— 应标 stale",
+                        extra={"by_card": cid, "status": "active"},
+                    ))
+    return out
+
+
 def scan_freshness_summary() -> list[Signal]:
     """聚合 freshness 统计（用 file mtime 兜底）"""
     out: list[Signal] = []
@@ -225,18 +285,18 @@ def scan_freshness_summary() -> list[Signal]:
 
 def render_markdown(signals: list[Signal]) -> str:
     out = ["# Metacognition Signals · Phase 5 v0.1", ""]
-    out.append("> 5 信号实现：✅ stale / ✅ orphan / ✅ freshness · ⏳ conflict / ⏳ weak-evidence（v0.2）")
+    out.append("> 信号：✅ stale / ✅ orphan / ✅ freshness / ✅ weak-evidence（OSA 卡） · ⏳ conflict（v0.2）")
     out.append("")
 
     by_kind: dict[str, list[Signal]] = {}
     for s in signals:
         by_kind.setdefault(s.kind, []).append(s)
 
-    for kind in ["freshness", "stale", "orphan"]:
+    for kind in ["freshness", "stale", "weak-evidence", "orphan"]:
         items = by_kind.get(kind, [])
         if not items:
             continue
-        emoji = {"freshness": "🌱", "stale": "🍂", "orphan": "🚨"}.get(kind, "·")
+        emoji = {"freshness": "🌱", "stale": "🍂", "weak-evidence": "🔬", "orphan": "🚨"}.get(kind, "·")
         out.append(f"## {emoji} {kind} ({len(items)})")
         out.append("")
         for s in items:
@@ -258,7 +318,9 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Yuanli-OS Company Brain · Metacognition Signals v0.1")
     p.add_argument("--wiki-root", type=Path, default=None,
                    help="Path to your wiki vault root (or set YUANLI_WIKI_ROOT env var)")
-    p.add_argument("--signal", choices=["stale", "orphan", "freshness", "all"], default="all")
+    p.add_argument("--signal", choices=["stale", "orphan", "freshness", "osa", "all"], default="all")
+    p.add_argument("--osa-dir", type=Path, default=None,
+                   help="OSA 决策卡 JSON 目录（默认 <wiki>/decisions/osa）")
     p.add_argument("--json", action="store_true")
     args = p.parse_args()
 
@@ -279,6 +341,8 @@ def main() -> int:
         signals.extend(scan_stale())
     if args.signal in {"orphan", "all"}:
         signals.extend(scan_orphan_commitments())
+    if args.signal in {"osa", "stale", "all"}:
+        signals.extend(scan_osa_card_signals(args.osa_dir))
 
     if args.json:
         print(json.dumps([asdict(s) for s in signals], ensure_ascii=False, indent=2))

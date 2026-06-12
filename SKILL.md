@@ -2,7 +2,7 @@
 name: yuanli-os-company-brain
 description: Build a personal/team "Company Brain" on top of any Obsidian-class wiki + Claude Code skills. Distilled from the Yuanli-OS Company Brain v0.1 (Sentra × Yuanli-OS alignment). Use this skill when you want to (1) turn 1000+ scattered notes/transcripts/decisions into a queryable context graph, (2) get right-time memory surface before drafting articles/proposals/meetings, (3) extract commitments / disagreements / counterfactuals / decision rationale from any meeting transcript with anti-hallucination grep gate, (4) score the maturity of your own knowledge system on the dual-axis (scaffold + usage) rubric.
 maturity: experimental
-version: v0.4.0
+version: v0.5.0
 license: MIT
 sources:
   - "Sentra Company Brain Part 1 / Part 2 by Ashwin Gopinath"
@@ -14,7 +14,7 @@ related-skills:
   - "skill-router / os-yuanli (governance gates)"
 ---
 
-# Yuanli-OS Company Brain · v0.4
+# Yuanli-OS Company Brain · v0.5
 
 > **One-line positioning**: A skill that turns "data-rich but memory-poor" wikis into a Sentra-style company brain — explicit three-circle boundaries, typed relationships, right-time surface, role lens, metacognition signals.
 
@@ -65,7 +65,7 @@ The promotion gate is **decided by the producer**, not pushed by management — 
 |---|---|---|
 | 0 · Concept | Read the spec, decide whether the Sentra mental model fits your context | `references/sentra-three-layers.md` |
 | 1 · Right-time surface | Auto-surface related concepts/tasks/historical drafts before any non-trivial output | `scripts/brain_surface.py` (UserPromptSubmit hook style) |
-| 2 · Three-circle protocol | Add `circle:` frontmatter (or auto-infer from path) + lint orphans | `scripts/wiki_lint_l9.py` (planned) |
+| 2 · Three-circle protocol | Add `circle:` frontmatter (or auto-infer from path) + lint orphans | `scripts/wiki_lint_l10.py` (the planned standalone `wiki_lint_l9.py` was folded into L10; a separate L9 linter stays on the v0.5 backlog) |
 | 3 · Interaction memory | Extract 4-tuples from any transcript with anti-hallucination grep gate | `templates/decision-page.md` + extractor prompt |
 | 4 · Role lens | Filter same content for self / student / partner / agent roles | `--role` flag in `brain_surface.py` |
 | 5 · Typed edges + Metacognition | Derive `commits-to / owns / blocks / derives-from / supersedes / supports` edges + freshness/orphan/stale signals | `scripts/relationship_graph.py` + `scripts/metacognition_signals.py` + `scripts/wiki_lint_l10.py` |
@@ -85,17 +85,38 @@ The promotion gate is **decided by the producer**, not pushed by management — 
 - [`references/karpathy-llm-wiki-pattern.md`](references/karpathy-llm-wiki-pattern.md) — `_ai-entry.md` + `_hot.md` AI entry compression (~20-30× token reduction on 1000-page wikis)
 - [`references/borrow-rubric-3-tier.md`](references/borrow-rubric-3-tier.md) — doc-level / executable-level / verified-level independent scoring that catches documentation theater
 
-### 7 scripts (the runtime · pure Python stdlib, no deps)
+### 9 scripts (the runtime · pure Python stdlib, except schema_system.py → PyYAML)
 
-All scripts accept `--wiki-root <path>` so they work on any Obsidian vault.
+All analysis scripts accept `--wiki-root <path>` (or `WIKI_ROOT=` env) so they work on any Obsidian vault. The only non-stdlib dependency in the whole skill is PyYAML, needed by `schema_system.py` alone — `pip install -r requirements.txt` if you use it.
 
 - `scripts/brain_surface.py` — right-time recall: searches concepts / open commitments / historical drafts / personal CLAUDE memory by topic
 - `scripts/relationship_graph.py` — typed edges scanner (explicit + derived from `decisions/` 4-tuples) → JSON / DOT / Mermaid / stats
 - `scripts/wiki_lint_l10.py` — `relationships:` schema validator (E1-E6 hard errors + W1-W5 warnings)
-- `scripts/metacognition_signals.py` — 5 signals: stale / orphan / freshness (v0.1 minimum); conflict / weak-evidence pending v0.2
+- `scripts/metacognition_signals.py` — signals: stale / orphan / freshness / weak-evidence (single-source OSA cards, v0.5); conflict pending
 - `scripts/extract_decision.py` — transcript → 4-tuple `.draft.md` scaffolding (LLM-driven; this script is the orchestrator template)
 - `scripts/share_slice_export.py` — tag-scoped, leak-guarded export of a vault slice to a read-only mirror dir (dry-run by default; the distribution organ's ①-③, see `references/team-share-slice.md`)
 - `scripts/intake_getnote.py` — hot-layer (PULSE) intake stub renderer: agent-side semantic recall results (JSON) → `sources/` markdown stubs with `circle: raw` + `truth_source` back-pointer. Carries the **large-integer note_id guardrail** (IDs past 2^53 silently lose precision in float-coercing runtimes — always recall semantically, store ids as strings)
+- `scripts/schema_system.py` — `infer / validate / diff` frontmatter schema toolkit (the one PyYAML consumer; v0.2)
+- `scripts/refresh_hot_static.py` — no-LLM static scanner that rebuilds `_hot.md` from decisions/concepts/sources mtimes (the Karpathy-pattern refresh strategy; v0.2)
+
+### 7 flywheel scripts (v0.5 · the production loop, field-run since 2026-06-06)
+
+These are the organs that make the brain *live* — incorporated from the author's
+production deployment (UserPromptSubmit hook fires on every non-trivial prompt;
+see `_bridge-log.jsonl` cadence in the field-test notes):
+
+- `scripts/brain_surface_hook.py` — **UserPromptSubmit hook**: auto-surfaces OSA decision cards + concepts before Claude answers (fail-silent, ~0.2s, env-configured: `YUANLI_WIKI_ROOT` / `YUANLI_OSA_EXTRA_DIRS`)
+- `scripts/brain_writeback_hook.py` — **Stop hook**: when a turn ends, auto-proposes typed edges for any new OSA card in the staging dir → `.draft.json` for human review (env: `YUANLI_WIKI_ROOT` / `YUANLI_WRITEBACK_SRC` / `YUANLI_WRITEBACK_INBOX`)
+- `scripts/brain_writeback.py` — the fan-in engine behind the Stop hook: card JSON → scan concept layer → propose edges back
+- `scripts/promote_card.py` — the **human gate**: reviewed `.draft.json` → `decisions/osa/` with quality-gate checks (dry-run by default; cross-skill gate probe degrades gracefully)
+- `scripts/embed_sources.py` — resumable batched vector indexer over `sources/` (DashScope embeddings → local `.vector-index/`; needs numpy; key via `DASHSCOPE_API_KEY`)
+- `scripts/cluster_decisions.py` — semantic clustering over decision sources → "hot topics not yet absorbed by any concept" priority list (selective fan-in, reuses the vector index)
+- `scripts/retype_references.py` — proposes re-typing flat `references` edges into the 6 typed relations (dry-run only; humans upgrade high-value edges)
+
+The trust ladder (`claude-auto < claude-unilateral < human-confirmed`) and the
+candidate-vs-active edge distinction now run through `brain_surface.py`,
+`relationship_graph.py` and `metacognition_signals.py` as well — high-value edges
+(`supersedes` / `blocks`) stay `candidate` until human-confirmed.
 
 ### 1 operations script (bash · the backup organ)
 
@@ -161,13 +182,14 @@ The author's field-test (2026-05-02) showed:
 
 See `examples/sample-runs/` for actual command outputs.
 
-## Roadmap (v0.5 candidates)
+## Roadmap (v0.6 candidates)
 
-- **Cold-start intake (Phase -1)**: raw dumps (PDF / Word / chat exports) → markdown → two-stage auto-organization (coarse classify-and-tag, then relation derivation). Deliberately deferred from v0.4 — the conversion route exists in field practice but hasn't been distilled to skill quality yet
-- `conflict` signal (two relationships in opposition) and `weak-evidence` signal (relationships with single source) for `metacognition_signals.py`
+- **Cold-start intake (Phase -1)**: raw dumps (PDF / Word / chat exports) → markdown → two-stage auto-organization (coarse classify-and-tag, then relation derivation). Deliberately deferred — the conversion route exists in field practice but hasn't been distilled to skill quality yet
+- `conflict` signal (two relationships in opposition) for `metacognition_signals.py` (`weak-evidence` shipped in v0.5)
 - TUI dashboard wrapping the 3 hard-layer scripts
 - `obsidian-cli` adapter so the scripts run inside Obsidian directly
 - Bridge to ticket systems (Linear / Jira / Feishu Bitable) for `commits-to` cross-system references
+- Standalone `wiki_lint_l9.py` (cross-reference linter; currently folded into L10)
 
 Pull requests welcome on opinionated additions; please open an issue first for non-opinionated ones (e.g. "make it work with Notion") so we can discuss the alignment.
 

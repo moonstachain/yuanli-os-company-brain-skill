@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange.svg)]()
-[![v0.4](https://img.shields.io/badge/version-v0.4-blue.svg)]()
+[![v0.5](https://img.shields.io/badge/version-v0.5-blue.svg)]()
 
 ## 这是什么
 
@@ -41,6 +41,14 @@
 - **GitHub connector 桥** —— 让运行在沙箱里的 web Claude 通过内置 GitHub connector 读取已同步的知识库（[详情](references/wiki-github-mirror-sync.md)）。
 - **热点层摄取适配器** —— 把语义召回结果落为 `sources/` 下带 `circle: raw` + `truth_source` 回指的 stub，内置大整数 note_id 精度护栏（[脚本](scripts/intake_getnote.py)）。
 
+**v0.5 新增功能（2026-06-12）** —— 从作者本机生产部署收编的「飞轮器官」：
+
+- **适时浮现 hook 化** —— `brain_surface_hook.py`（UserPromptSubmit）在每个非平凡 prompt 上自动浮现决策卡+概念；`brain_writeback_hook.py`（Stop）在回合结束时自动为新决策卡提议关系边。均 env 配置、fail-silent。
+- **回写 fan-in + 人审晋升门** —— `brain_writeback.py` 提议边，`promote_card.py` 把人审过的草稿过质量门后晋升（AI 提议、人晋升 = 三圈纪律的机械化）。
+- **信任阶梯贯通全链** —— `claude-auto < claude-unilateral < human-confirmed`；高价值边（supersedes/blocks）未经人审保持 candidate 状态。
+- **可选语义召回** —— `embed_sources.py` 本地向量索引 + 中文 bigram 词法兜底；`cluster_decisions.py` 找「还没被任何概念吸收的热议题」；`retype_references.py` 为扁平 references 边提议类型升级。
+- **weak-evidence 信号上线** —— 单一来源的决策卡会被标记（原 v0.2 roadmap 项）。
+
 本 skill 构建于 Sentra「公司大脑」心智模型（Ashwin Gopinath，2026-04）× 原力OS 治理内核 × 独立借鉴审计（2026-05-08）× 一周真实团队实战讨论（2026-06）之上。
 
 ## 5 分钟快速上手
@@ -65,7 +73,7 @@ python3 scripts/relationship_graph.py --wiki-root ~/path/to/your/vault --mermaid
 WIKI_ROOT=~/path/to/your/vault python3 scripts/refresh_hot_static.py
 ```
 
-无任何依赖（纯 Python 标准库）。已在 Python 3.10+ 上测试通过。
+纯 Python 标准库，唯一例外：`schema_system.py` 需要 PyYAML（`pip install -r requirements.txt`）。其余脚本零依赖。已在 Python 3.10+ 上测试通过。
 
 ## 你会得到什么
 
@@ -75,22 +83,46 @@ yuanli-os-company-brain-skill/
 ├── README.md                      # 英文版说明
 ├── README.zh-CN.md                # 本文件（中文版）
 ├── LICENSE                        # MIT
-├── references/                    # 5 套核心方法论
+├── requirements.txt               # PyYAML（仅 schema_system.py 需要）
+├── references/                    # 12 套核心方法论
 │   ├── sentra-three-layers.md     # Sentra 三层 × 四要素
 │   ├── three-circles-protocol.md  # 个人 / 共享 / 机构 三圈协议
 │   ├── typed-relationships-schema.md  # 6 种关系类型 + G2 闭合阈值
 │   ├── dual-axis-rubric.md        # 骨架成熟度 + 使用成熟度
-│   └── 24h-rescore-protocol.md    # 诚实自审纪律
-├── scripts/                       # 5 个可参数化的运行时工具
-│   ├── brain_surface.py           # 适时召回
-│   ├── relationship_graph.py      # 带类型的边（显式 + 推导）
+│   ├── 24h-rescore-protocol.md    # 诚实自审纪律
+│   ├── 5-layer-architecture.md    # 托管感知五层模型（v0.2）
+│   ├── borrow-rubric-3-tier.md    # 文档/可执行/已验证 三档打分（v0.2）
+│   ├── karpathy-llm-wiki-pattern.md   # AI 入口压缩层（v0.2）
+│   ├── wiki-github-mirror-sync.md     # 私有镜像 + connector 桥（v0.3/v0.4）
+│   ├── multiplatform-projection-protocol.md  # SSOT 单向投影（v0.3）
+│   ├── tiered-knowledge-spine.md      # 分层知识脊柱（v0.4）
+│   └── team-share-slice.md            # 团队共享切片（v0.4）
+├── scripts/                       # 16 个运行时工具 + 1 个运维脚本
+│   ├── brain_surface.py           # 适时召回（中文 bigram 词法 + 可选语义）
+│   ├── relationship_graph.py      # 带类型的边（显式 + 推导 + OSA 卡 JSON）
 │   ├── wiki_lint_l10.py           # 关系 schema 校验器
-│   ├── metacognition_signals.py   # 过期 / 孤立 / 新鲜度信号
-│   └── extract_decision.py        # 逐字稿 → 四元组脚手架
-├── templates/                     # 3 个 frontmatter 模板
+│   ├── metacognition_signals.py   # 过期 / 孤立 / 新鲜度 / 弱证据信号
+│   ├── extract_decision.py        # 逐字稿 → 四元组脚手架
+│   ├── schema_system.py           # infer / validate / diff（v0.2 · PyYAML）
+│   ├── refresh_hot_static.py      # 无 LLM 的 _hot.md 刷新器（v0.2）
+│   ├── share_slice_export.py      # 团队共享切片导出器（v0.4）
+│   ├── intake_getnote.py          # 热点层摄取 stub（v0.4）
+│   ├── brain_surface_hook.py      # UserPromptSubmit hook（v0.5）
+│   ├── brain_writeback_hook.py    # Stop hook（v0.5）
+│   ├── brain_writeback.py         # 边提议 fan-in 引擎（v0.5）
+│   ├── promote_card.py            # 人审晋升门（v0.5）
+│   ├── embed_sources.py           # 向量索引器（v0.5 · numpy）
+│   ├── cluster_decisions.py       # 未吸收议题聚类（v0.5）
+│   ├── retype_references.py       # 扁平边重分类提议（v0.5）
+│   └── wiki_git_mirror_sync.sh    # 私有镜像备份（v0.3）
+├── templates/                     # 7 个模板
 │   ├── decision-page.md
 │   ├── circle-frontmatter.md
-│   └── relationship-frontmatter.md
+│   ├── relationship-frontmatter.md
+│   ├── _ai-entry.md.template      # Karpathy 主地图（v0.2）
+│   ├── _hot.md.template           # 活动缓存（v0.2）
+│   ├── wiki-mirror.gitignore      # 脱敏白名单（v0.3）
+│   └── com.example.wiki-mirror-sync.plist.template  # launchd 定时器（v0.3）
 └── examples/                      # 最小示例库 + 样例运行结果
     ├── wiki/                      # 12 篇笔记（概念 / 决策 / 综合 / 逐字稿）
     └── sample-runs/               # 捕获的命令输出

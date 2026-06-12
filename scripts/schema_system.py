@@ -16,12 +16,20 @@ Usage:
 from __future__ import annotations
 import sys
 import os
-import yaml
+
+try:
+    import yaml
+except ModuleNotFoundError:
+    sys.exit(
+        "ERROR: schema_system.py needs PyYAML — the ONE non-stdlib dep in this skill.\n"
+        "  pip install -r requirements.txt    # or: pip install PyYAML"
+    )
 from pathlib import Path
 from collections import Counter, defaultdict
 from datetime import datetime
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", "~/Documents/your-wiki"))
+_wiki_env = os.environ.get("WIKI_ROOT")
+WIKI_ROOT = Path(_wiki_env).expanduser() if _wiki_env else None  # required for relative <dir>
 
 
 def parse_frontmatter(filepath: Path) -> dict:
@@ -62,6 +70,11 @@ def detect_type(value) -> str:
 def cmd_infer(target_dir: Path) -> dict:
     """扫所有 .md frontmatter，推断 schema。"""
     if not target_dir.is_absolute():
+        if WIKI_ROOT is None:
+            print("ERROR: relative <dir> requires WIKI_ROOT to be set.\n"
+                  "Usage: WIKI_ROOT=/abs/path/to/vault python3 schema_system.py infer concepts/",
+                  file=sys.stderr)
+            return {}
         target_dir = WIKI_ROOT / target_dir
     if not target_dir.exists():
         print(f"ERROR: {target_dir} not found", file=sys.stderr)
@@ -91,7 +104,8 @@ def cmd_infer(target_dir: Path) -> dict:
 
     schema = {
         "schema_version": f"auto-{datetime.now().strftime('%Y%m%d-%H%M')}",
-        "target": str(target_dir.relative_to(WIKI_ROOT)),
+        "target": str(target_dir.relative_to(WIKI_ROOT))
+                  if WIKI_ROOT and target_dir.is_relative_to(WIKI_ROOT) else str(target_dir),
         "total_files_scanned": total,
         "fields": {},
     }

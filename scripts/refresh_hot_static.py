@@ -20,7 +20,13 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 
-WIKI = Path(os.environ.get("WIKI_ROOT", "~/Documents/your-wiki"))
+_wiki_env = os.environ.get("WIKI_ROOT")
+if not _wiki_env:
+    sys.exit(
+        "ERROR: WIKI_ROOT environment variable not set.\n"
+        "  Usage: WIKI_ROOT=/abs/path/to/vault python3 refresh_hot_static.py"
+    )
+WIKI = Path(_wiki_env).expanduser()
 HOT_PATH = WIKI / "_hot.md"
 NOW = datetime.now()
 DECISIONS_WINDOW_D = 60   # 决策稀疏，窗口拉大

@@ -6,6 +6,66 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · [SemVer](htt
 
 ---
 
+## [v0.5.0] — 2026-06-12
+
+The "incorporate the flywheel" release. A first-principles self-audit (run with this
+skill's own borrow-rubric) found the repo's biggest structural gap: the organs that
+make the brain *live* in the author's production deployment — the prompt-time surface
+hook, the write-back loop, the trust ladder — were not in the published repo. This
+release closes that gap and fixes every trust defect the audit surfaced.
+
+### Added · the production flywheel (7 scripts, field-run since 2026-06-06)
+
+- `scripts/brain_surface_hook.py` — UserPromptSubmit hook: two-layer recall (OSA
+  decision cards + concepts) on every non-trivial prompt, fail-silent, ~0.2s.
+  Env-configured (`YUANLI_WIKI_ROOT`, `YUANLI_OSA_EXTRA_DIRS`) — machine-specific
+  defaults removed during incorporation.
+- `scripts/brain_writeback_hook.py` — Stop hook: auto-runs edge proposal for new
+  OSA cards in a staging dir (env: `YUANLI_WRITEBACK_SRC/INBOX`).
+- `scripts/brain_writeback.py` — fan-in engine: card JSON → concept scan → proposed
+  edges → `.draft.json` for human review.
+- `scripts/promote_card.py` — the human gate: reviewed draft → `decisions/osa/`,
+  quality-gate checked, dry-run by default. AI proposes, human promotes.
+- `scripts/embed_sources.py` — resumable batched vector indexer (DashScope, numpy).
+- `scripts/cluster_decisions.py` — semantic clustering → "hot but unabsorbed topics".
+- `scripts/retype_references.py` — flat `references` → 6 typed relations, dry-run.
+
+### Changed · trust ladder through the core scripts
+
+- `brain_surface.py`: CJK character-bigram retrieval (natural-language Chinese
+  prompts now actually match), distinct-term precision signal, trust inference
+  (`claude-auto < claude-unilateral < human-confirmed`), OSA-card scanning,
+  optional semantic recall (graceful lexical fallback without numpy).
+- `relationship_graph.py`: OSA-card JSON edges (`osa-card-json` source kind),
+  high-value edges (`supersedes`/`blocks`) stay `candidate` until human-confirmed;
+  stats now report active vs candidate.
+- `metacognition_signals.py`: **weak-evidence signal shipped** (single-source OSA
+  cards flagged — was a v0.2 roadmap item); supersedes-driven stale signals from
+  decision cards.
+
+### Fixed · every defect from the 2026-06-12 self-audit
+
+- "pure stdlib, no deps" claim was false (schema_system.py imports PyYAML) →
+  `requirements.txt` added (PyYAML + optional numpy), claims corrected in both
+  READMEs and SKILL.md, import guarded with an actionable error.
+- `schema_system.py` / `refresh_hot_static.py` hardcoded `~/Documents/your-wiki`
+  default → now fail fast with usage when `WIKI_ROOT` is unset.
+- SKILL.md said "7 scripts" (9 tracked), README trees said "5 methodologies /
+  3 templates" (12 / 7) → all counts now generated-from-reality.
+- Phase 2's `wiki_lint_l9.py (planned)` dangled since v0.1 → annotated (folded
+  into L10; standalone L9 moved to v0.6 backlog).
+- `examples/sample-runs/` snapshots were 42 days stale and disagreed with current
+  output → re-captured against v0.5 scripts.
+- One-off local distillation scripts and generated example artifacts now
+  `.gitignore`d so `git status` stays honest.
+
+### Added · CI
+
+- `.github/workflows/ci.yml` — py_compile all scripts + run the three example-vault
+  regressions on every push (the verified-level floor the audit found missing).
+
+---
+
 ## [v0.4.0] — 2026-06-12
 
 Distilled from a week of field discussions (2026-06-02 → 06-11) on running a

@@ -1,0 +1,6 @@
+# Non-stdlib dependencies — both OPTIONAL, everything else is pure stdlib.
+# - PyYAML: only scripts/schema_system.py
+# - numpy:  only the semantic-recall path (scripts/embed_sources.py +
+#           brain_surface.py --semantic); lexical recall works without it
+PyYAML>=5.0
+numpy>=1.24
